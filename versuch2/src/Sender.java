@@ -30,16 +30,55 @@ public class Sender {
      * @throws IOException Wird geworfen falls Sockets nicht erzeugt werden können.
      */
     private void send() throws IOException {
-/*   	//Text einlesen und in Worte zerlegen
+        //Text einlesen...
+        BufferedReader stdIn = new BufferedReader(new InputStreamReader(System.in));
+        String userInput = stdIn.readLine();
+        userInput += " EOT";
+
+        //... und in Worte zerlegen
+        String[] words = userInput.split(" ");
+        // Füge Leerzeichen wieder ein
+        for (int i = 0; i < words.length - 1 /* ignoriere EOT */; i++) words[i] += " ";
 
         // Socket erzeugen auf Port 9998 und Timeout auf eine Sekunde setzen
+        DatagramSocket clientSocket = new DatagramSocket(9998);
+        clientSocket.setSoTimeout(1000);
 
-        // Iteration über den Konsolentext
+        int currentWord = 0;
+        int seqNumber = 1;
         while (true) {
-        	// Paket an Port 9997 senden
-        	
+            // Erstelle Paket
+            Packet packetOut = new Packet(seqNumber, seqNumber + words[currentWord].length(), false, words[currentWord].getBytes());
+
+            // Paket serialisierien
+            ByteArrayOutputStream b = new ByteArrayOutputStream();
+            ObjectOutputStream o = new ObjectOutputStream(b);
+            o.writeObject(packetOut);
+            byte[] sndBuf = b.toByteArray();
+
+            // Raw Datagram Paket erstellen und abschicken
+            InetAddress address = InetAddress.getLocalHost();
+            DatagramPacket sndPacketRaw = new DatagramPacket(sndBuf, sndBuf.length, address, 9997);
+            clientSocket.send(sndPacketRaw);
+
             try {
-                // Auf ACK warten und erst dann Schleifenzähler inkrementieren
+                // Auf ACK warten
+                // Raw Datagram Paket erhalten
+                byte[] rcvBuf = new byte[256];
+                DatagramPacket rcvPacketRaw = new DatagramPacket(rcvBuf, 256);
+                clientSocket.receive(rcvPacketRaw);
+
+                // Raw Datagram deserialisieren
+                ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(rcvPacketRaw.getData()));
+                Packet packetIn = (Packet) is.readObject();
+
+                seqNumber = packetIn.getAckNum();
+                currentWord++;
+
+                String rcvMessage = new String(packetIn.getPayload());
+                if (rcvMessage.equals("EOT")) {
+                    break;
+                }
 
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
@@ -54,7 +93,7 @@ public class Sender {
         if(System.getProperty("os.name").equals("Linux")) {
             clientSocket.disconnect();
         }
-*/
+
         System.exit(0);
     }
 }
