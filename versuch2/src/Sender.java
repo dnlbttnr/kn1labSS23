@@ -46,7 +46,7 @@ public class Sender {
 
         // Iteration über den Konsolentext
         int currentWord = 0;
-        int seqNumber = 1;
+        int seqNumber = 0;
         while (currentWord < words.length) {
             // Paket an Port 9997 senden
             Packet packetOut = new Packet(seqNumber, seqNumber+words[currentWord].length(), false, words[currentWord].getBytes());
